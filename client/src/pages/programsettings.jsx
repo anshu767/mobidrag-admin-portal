@@ -1,5 +1,9 @@
 import { useState } from "react";
-import Toggle from "../components/Toggle";
+const Toggle = () => {
+  return <button>Toggle</button>;
+};
+
+export default Toggle;
 
 const initialTiers = [
   { id: "silver", name: "Silver", desc: "1–2 active apps per month", value: 10 },
