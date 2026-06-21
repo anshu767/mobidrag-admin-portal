@@ -6,13 +6,14 @@ export default function Deals() {
   const [deals, setDeals] = useState([]);
   const [selected, setSelected] = useState(null);
 
-  // 🔥 FETCH DEALS
+  // ✅ ONLY ONE FETCH FUNCTION
   const fetchDeals = async () => {
     try {
       const res = await api.get("/admin/deals");
+      console.log("DATA:", res.data); // debug
       setDeals(res.data.data || []);
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error("Fetch error:", err.response || err);
     }
   };
 
@@ -30,16 +31,6 @@ export default function Deals() {
     }
   };
 
-  const fetchDeals = async () => {
-  try {
-    const res = await api.get("/admin/deals");
-    console.log("DATA:", res.data); // 👈 ADD THIS
-    setDeals(res.data.data || []);
-  } catch (err) {
-    console.error("Fetch error:", err.response || err);
-  }
-};
-
   return (
     <div className="flex-1 flex flex-col">
       <Topbar title="All Deals" />
@@ -47,7 +38,7 @@ export default function Deals() {
       <main className="p-4">
         <div className="bg-white rounded-xl p-5 shadow-sm">
 
-          {/* ✅ HEADER */}
+          {/* HEADER */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex gap-6 text-sm">
               <span className="text-purple-600 border-b-2 border-purple-600 pb-1">
@@ -63,19 +54,18 @@ export default function Deals() {
             </span>
           </div>
 
-          {/* 🔍 SEARCH */}
+          {/* SEARCH */}
           <input
             placeholder="Search by brand or partner..."
             className="w-full mb-4 px-3 py-2 text-sm border rounded-md"
           />
 
-          {/* ❌ EMPTY */}
+          {/* EMPTY */}
           {deals.length === 0 ? (
             <p className="text-center text-gray-400 py-10">
               No deals found
             </p>
           ) : (
-
             <table className="w-full text-sm">
               <thead className="text-gray-500 border-b text-left">
                 <tr>
@@ -90,65 +80,52 @@ export default function Deals() {
 
               <tbody>
                 {deals.map((deal) => (
-                  <tr
-                    key={deal._id}
-                    className="border-b hover:bg-gray-50 transition"
-                  >
-                    {/* BRAND */}
+                  <tr key={deal._id} className="border-b hover:bg-gray-50">
+
                     <td className="py-4">
-                      <div className="font-medium text-gray-800">
-                        {deal.brandName}
-                      </div>
+                      <div className="font-medium">{deal.brandName}</div>
                       <div className="text-xs text-gray-400">
                         {deal.website || "example.com"}
                       </div>
                     </td>
 
-                    {/* PARTNER */}
-                    <td className="text-gray-700">
-                      {deal.partnerId?.name || "—"}
-                    </td>
+                    <td>{deal.partnerId?.name || "—"}</td>
 
-                    {/* PLAN */}
-                    <td className="text-purple-600 font-medium">
+                    <td className="text-purple-600">
                       ₹{deal.amount || 0}
                     </td>
 
-                    {/* STAGE */}
                     <td>
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                          deal.stage === "won"
-                            ? "bg-green-100 text-green-600"
-                            : deal.stage === "demo"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : deal.stage === "negotiating"
-                            ? "bg-purple-100 text-purple-600"
-                            : deal.stage === "lost"
-                            ? "bg-red-100 text-red-600"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        deal.stage === "won"
+                          ? "bg-green-100 text-green-600"
+                          : deal.stage === "demo"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : deal.stage === "negotiating"
+                          ? "bg-purple-100 text-purple-600"
+                          : deal.stage === "lost"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-gray-100 text-gray-600"
+                      }`}>
                         {deal.stage}
                       </span>
                     </td>
 
-                    {/* DATE */}
-                    <td className="text-gray-500 text-xs">
+                    <td className="text-xs text-gray-500">
                       {deal.updatedAt
                         ? new Date(deal.updatedAt).toLocaleDateString()
                         : "-"}
                     </td>
 
-                    {/* ACTION */}
                     <td>
                       <button
                         onClick={() => setSelected(deal._id)}
-                        className="text-blue-600 text-sm hover:underline"
+                        className="text-blue-600 hover:underline"
                       >
                         Open
                       </button>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
