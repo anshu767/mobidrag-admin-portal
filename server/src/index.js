@@ -38,7 +38,7 @@ app.use((req, res, next) => {
 
 // ✅ ROOT ROUTE (ab / open karoge to error nahi aayega)
 app.get("/", (req, res) => {
-  res.send("🚀 MobiDrag Backend Running");
+  res.send("MobiDrag Admin Backend Running Successfully 🚀");
 });
 
 // ✅ HEALTH CHECK
