@@ -113,24 +113,31 @@ const seedDatabase = async () => {
         stage: 'demo',
         amount: 120000,
       },
+      {
+        brandName: 'Adidas Rollout',
+        partnerId: partners[2]._id,
+        stage: 'won',
+        amount: 30000,
+      },
     ]);
 
     console.log(`✓ Created ${deals.length} deals`);
 
     // Create commissions (auto-created from won deals)
-    // Commission = 10% of deal amount
+    // Commission = 10% of deal amount, one per won deal
     const commissions = await Commission.insertMany([
       {
-        dealId: deals[0]._id, // Nike (won)
+        dealId: deals[0]._id, // Nike (won) — still pending
         partnerId: partners[0]._id,
         amount: 5000, // 10% of 50000
         status: 'pending',
       },
       {
-        dealId: deals[0]._id,
-        partnerId: partners[0]._id,
-        amount: 3000,
+        dealId: deals[4]._id, // Adidas (won) — already paid
+        partnerId: partners[2]._id,
+        amount: 3000, // 10% of 30000
         status: 'paid',
+        paidAt: new Date(),
       },
     ]);
 

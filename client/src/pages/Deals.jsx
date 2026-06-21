@@ -1,138 +1,129 @@
-import { useState } from 'react';
-import Topbar from '../layouts/Topbar';
-import { ArrowLeft, Calendar, User, DollarSign } from 'lucide-react';
-
-const allDeals = [
-  { id: 1, company: 'FitFlex Apparel',    partner: 'Shopify Wizards', stage: 'Demo scheduled', value: '$3,200/mo', lastUpdate: '1 day ago',   stalled: false, contact: 'Ananya Sharma', email: 'ananya@fitflex.in',   notes: 'Demo booked for Jun 10 at 3PM IST. Partner confirmed attendance.' },
-  { id: 2, company: 'TechNova Solutions', partner: 'Ecom Growth',     stage: 'Negotiating',    value: '$2,800/mo', lastUpdate: '3 days ago',  stalled: false, contact: 'Rahul Mehta',   email: 'rahul@technova.io',   notes: 'Pricing discussion ongoing. Client wants a 3-month pilot.' },
-  { id: 3, company: 'Brew Collective',    partner: 'Brew Collective',  stage: 'Demo done',      value: '$1,400/mo', lastUpdate: '9 days ago',  stalled: true,  contact: 'Sam Wilson',    email: 'sam@brew.co',         notes: 'Demo went well but no follow-up. Partner should nudge.' },
-  { id: 4, company: 'NailLab India',      partner: 'Mobilify Agency',  stage: 'Contacted',      value: '$900/mo',   lastUpdate: '8 days ago',  stalled: true,  contact: 'Priya Nair',    email: 'priya@naillab.in',    notes: 'Initial outreach sent. No reply yet from prospect.' },
-  { id: 5, company: 'HomeDecor Hub',      partner: 'RocketStack',      stage: 'Demo done',      value: '$2,200/mo', lastUpdate: '12 days ago', stalled: true,  contact: 'Vikram Singh',  email: 'vikram@homedecor.co', notes: 'Demo completed. Decision maker was not present. Reschedule needed.' },
-  { id: 6, company: 'GlowSkin Co.',       partner: 'Shopify Wizards',  stage: 'Won',            value: '$4,100/mo', lastUpdate: '5 days ago',  stalled: false, contact: 'Meera Joshi',   email: 'meera@glowskin.in',   notes: 'Deal closed! Onboarding scheduled for Jun 20.' },
-];
-
-const stageBadge = {
-  'Contacted':      'bg-blue-100 text-blue-700',
-  'Demo scheduled': 'bg-violet-100 text-violet-700',
-  'Demo done':      'bg-amber-100 text-amber-700',
-  'Negotiating':    'bg-orange-100 text-orange-700',
-  'Won':            'bg-emerald-100 text-emerald-700',
-};
+import { useState, useEffect } from "react";
+import axios from "axios";
+import Topbar from "../layouts/Topbar";
+import { ArrowLeft } from "lucide-react";
 
 export default function Deals() {
   const [selected, setSelected] = useState(null);
+  const [deals, setDeals] = useState([]);
 
-  const stalledCount = allDeals.filter(d => d.stalled).length;
-  const deal = allDeals.find(d => d.id === selected);
+  // ✅ FETCH DEALS
+  const fetchDeals = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/admin/deals");
+      setDeals(res.data.data || []);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
 
+  useEffect(() => {
+    fetchDeals();
+  }, []);
+
+  // ✅ UPDATE STAGE
+  const updateStage = async (dealId, stage) => {
+    try {
+      await axios.patch(
+        `http://localhost:5000/api/admin/deals/${dealId}/stage`,
+        { stage }
+      );
+
+      alert("Stage updated");
+      fetchDeals();
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Error updating stage");
+    }
+  };
+
+  const deal = deals.find((d) => d._id === selected);
+
+  // 🔍 SINGLE DEAL VIEW
   if (selected && deal) {
     return (
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar title={deal.company} />
-        <main className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 flex flex-col">
+        <Topbar title={deal.brandName || "Deal"} />
+
+        <main className="p-6">
           <button
             onClick={() => setSelected(null)}
-            className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6 transition-colors"
+            className="mb-4 text-sm text-gray-500 flex items-center gap-1"
           >
-            <ArrowLeft size={16} /> Back to All Deals
+            <ArrowLeft size={16} /> Back
           </button>
 
-          <div className="grid grid-cols-2 gap-6">
-            {/* Deal details */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
-              <h2 className="text-sm font-semibold text-slate-700">Deal details</h2>
-              <div className="flex items-center gap-3">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${stageBadge[deal.stage] || 'bg-slate-100 text-slate-600'}`}>
-                  {deal.stage}
-                </span>
-                {deal.stalled && (
-                  <span className="px-2 py-0.5 bg-red-50 text-red-500 text-xs rounded-full font-medium">Stalled {deal.lastUpdate}</span>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Company</p>
-                  <p className="font-medium text-slate-800">{deal.company}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Partner</p>
-                  <p className="font-medium text-slate-800">{deal.partner}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Deal value</p>
-                  <p className="font-semibold text-violet-600">{deal.value}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Last update</p>
-                  <p className={deal.stalled ? 'text-red-500 font-medium' : 'text-slate-700'}>{deal.lastUpdate}</p>
-                </div>
-              </div>
-            </div>
+          <div className="bg-white p-5 border rounded-lg">
+            <h2 className="font-semibold mb-3">Deal Details</h2>
 
-            {/* Contact */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-slate-700">Contact</h2>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center">
-                  <User size={16} className="text-violet-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{deal.contact}</p>
-                  <p className="text-xs text-slate-400">{deal.email}</p>
-                </div>
-              </div>
-              <button className="w-full mt-2 py-2 border border-violet-200 text-violet-600 text-sm rounded-lg hover:bg-violet-50 transition-colors">
-                Send message
-              </button>
-            </div>
+            <select
+              value={deal.stage}
+              onChange={(e) => updateStage(deal._id, e.target.value)}
+              className="border px-2 py-1 mb-3"
+            >
+              <option value="contacted">Contacted</option>
+              <option value="demo">Demo</option>
+              <option value="negotiating">Negotiating</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
 
-            {/* Notes */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 col-span-2">
-              <h2 className="text-sm font-semibold text-slate-700 mb-3">Notes</h2>
-              <p className="text-sm text-slate-600">{deal.notes}</p>
-            </div>
+            <p><b>Company:</b> {deal.brandName}</p>
+            <p><b>Partner:</b> {deal.partnerId?.name || "N/A"}</p>
+            <p><b>Amount:</b> ₹{deal.amount}</p>
           </div>
         </main>
       </div>
     );
   }
 
+  // 📋 ALL DEALS VIEW
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col">
       <Topbar title="All Deals" />
-      <main className="flex-1 overflow-y-auto p-6">
-        {stalledCount > 0 && (
-          <div className="flex gap-3 mb-5">
-            <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
-              {stalledCount} stalled 7+ days
-            </span>
-          </div>
-        )}
 
-        <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
-          {allDeals.map((deal) => (
-            <div key={deal.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
-              <div className="flex-1 grid grid-cols-4 gap-4 items-center">
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{deal.company}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{deal.partner}</p>
-                </div>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium w-fit ${stageBadge[deal.stage] || 'bg-slate-100 text-slate-600'}`}>
-                  {deal.stage}
-                </span>
-                <p className="text-sm text-slate-700">{deal.value}</p>
-                <p className={`text-xs ${deal.stalled ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
-                  {deal.stalled ? `⚠ Stalled · ${deal.lastUpdate}` : deal.lastUpdate}
+      <main className="p-6">
+        <div className="bg-white border rounded-lg">
+
+          {deals.length === 0 && (
+            <p className="p-4 text-gray-500">No deals found</p>
+          )}
+
+          {deals.map((deal) => (
+            <div
+              key={deal._id}
+              className="flex items-center justify-between p-4 border-b"
+            >
+              <div>
+                <p className="font-medium">{deal.brandName}</p>
+                <p className="text-xs text-gray-400">
+                  {deal.partnerId?.name || "No Partner"}
                 </p>
               </div>
+
+              <select
+                value={deal.stage}
+                onChange={(e) => updateStage(deal._id, e.target.value)}
+                className="border px-2 py-1"
+              >
+                <option value="contacted">Contacted</option>
+                <option value="demo">Demo</option>
+                <option value="negotiating">Negotiating</option>
+                <option value="won">Won</option>
+                <option value="lost">Lost</option>
+              </select>
+
+              <p>₹{deal.amount}</p>
+
               <button
-                onClick={() => setSelected(deal.id)}
-                className="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-violet-600 border border-violet-200 rounded-lg hover:bg-violet-50 transition-colors"
+                onClick={() => setSelected(deal._id)}
+                className="px-3 py-1 text-xs border text-violet-600"
               >
                 Open
               </button>
             </div>
           ))}
+
         </div>
       </main>
     </div>

@@ -10,20 +10,14 @@ import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 
-// Load env
 dotenv.config();
 
-// Init app
 const app = express();
 
-// Connect DB
+// DB
 connectDB();
 
-/**
- * 🔥 MIDDLEWARE (ORDER VERY IMPORTANT)
- */
-
-// ✅ CORS FIRST
+// Middleware
 app.use(
   cors({
     origin:
@@ -34,43 +28,31 @@ app.use(
   })
 );
 
-// ✅ Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Logging
+// Logging
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 });
 
-/**
- * 🚀 ROUTES
- */
-
-// Health check
+// Routes
 app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "Server running 🚀" });
 });
 
-// Auth
 app.use("/api/auth", authRoutes);
-
-// Admin (ONLY ONCE)
 app.use("/api/admin", adminRoutes);
 
-/**
- * ❗ ERROR HANDLERS
- */
+// Error handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-/**
- * 🚀 START SERVER
- */
+// Server start
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`
 ╔════════════════════════════════════════╗
 ║   MobiDrag Admin Panel Server Running  ║

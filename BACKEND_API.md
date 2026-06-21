@@ -545,3 +545,4 @@ Content-Type: application/json
 ---
 
 **Happy Coding! 🚀**
+npm run dev

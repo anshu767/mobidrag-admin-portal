@@ -1,35 +1,25 @@
-/**
- * Commission Model
- * Tracks commission payments to partners
- * Fields: dealId, partnerId, amount, status, createdAt, updatedAt
- */
-
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const commissionSchema = new mongoose.Schema(
   {
-    dealId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Deal',
-      required: true,
-    },
     partnerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+      ref: "Partner",
     },
-    amount: {
-      type: Number,
-      required: true,
-      min: 0,
+    dealId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Deal",
     },
+    amount: Number,
+    rate: Number,
     status: {
       type: String,
-      enum: ['pending', 'paid'],
-      default: 'pending',
+      enum: ["pending", "paid"],
+      default: "pending",
     },
+    paid_at: Date,
   },
   { timestamps: true }
 );
 
-export default mongoose.model('Commission', commissionSchema);
+export default mongoose.model("Commission", commissionSchema);

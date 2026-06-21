@@ -1,31 +1,26 @@
-/**
- * Error Handler Middleware
- * Centralized error handling for all API responses
- * Provides consistent error format across all routes
- */
+// Async handler (VERY IMPORTANT)
+export const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 
+// Error handler
 export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err.message);
+  console.error("Error:", err.message);
 
   const status = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  const message = err.message || "Internal Server Error";
 
   res.status(status).json({
     success: false,
     message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 };
 
-/**
- * Not Found Handler
- * Handles 404 errors for undefined routes
- */
+// Not found handler
 export const notFoundHandler = (req, res) => {
   res.status(404).json({
     success: false,
     message: `Route ${req.originalUrl} not found`,
   });
 };
-
-export default { errorHandler, notFoundHandler };

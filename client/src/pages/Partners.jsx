@@ -1,46 +1,123 @@
-import Topbar from '../layouts/Topbar';
-import Card from '../components/Card';
-import Table from '../components/Table';
-import Badge from '../components/Badge';
-
-const partners = [
-  { id: 1, initials: 'SW', color: 'bg-violet-600', name: 'Shopify Wizards Agency', email: 'contact@swagency.io', type: 'Agency',   revenue: '$12,400', deals: 8,  status: 'Active' },
-  { id: 2, initials: 'EG', color: 'bg-orange-500', name: 'Ecom Growth Studio',     email: 'hi@ecomgrowth.co',  type: 'Agency',   revenue: '$8,200',  deals: 6,  status: 'Active' },
-  { id: 3, initials: 'RS', color: 'bg-emerald-600',name: 'RocketStack Consulting', email: 'bd@rocketstack.io', type: 'Reseller', revenue: '$6,100',  deals: 5,  status: 'Active' },
-  { id: 4, initials: 'MA', color: 'bg-blue-600',   name: 'Mobilify Agency',        email: 'team@mobilify.com', type: 'Agency',   revenue: '$4,700',  deals: 4,  status: 'Active' },
-  { id: 5, initials: 'BC', color: 'bg-rose-500',   name: 'Brew Collective',        email: 'info@brew.co',      type: 'Reseller', revenue: '$1,200',  deals: 2,  status: 'Inactive' },
-];
-
-const columns = [
-  { key: 'name', label: 'Partner', render: (row) => (
-    <div className="flex items-center gap-2">
-      <div className={`w-7 h-7 rounded-full ${row.color} flex items-center justify-center text-white text-xs font-bold`}>
-        {row.initials}
-      </div>
-      <div>
-        <p className="text-sm font-medium text-slate-800">{row.name}</p>
-        <p className="text-xs text-slate-400">{row.email}</p>
-      </div>
-    </div>
-  )},
-  { key: 'type',    label: 'Type' },
-  { key: 'revenue', label: 'Revenue' },
-  { key: 'deals',   label: 'Deals', render: (row) => <span>{row.deals} deals</span> },
-  { key: 'status',  label: 'Status', render: (row) => <Badge label={row.status} variant={row.status === 'Active' ? 'success' : 'default'} /> },
-  { key: 'actions', label: '', render: () => (
-    <button className="text-xs text-violet-600 hover:underline">View</button>
-  )},
-];
+import { useEffect, useState } from "react";
+import axios from "axios";
+import Topbar from "../layouts/Topbar";
 
 export default function Partners() {
+  const [partners, setPartners] = useState([]);
+
+  // 🔥 NEW STATE
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  const fetchPartners = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/partners",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setPartners(res.data.data || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPartners();
+  }, []);
+
+  // 🔥 ADD PARTNER FUNCTION
+  const addPartner = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axios.post(
+        "http://localhost:5000/api/admin/partners",
+        {
+          name,
+          email,
+          tier: "gold",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // 🔥 instant UI update
+      setPartners((prev) => [res.data.data, ...prev]);
+
+      setShowForm(false);
+      setName("");
+      setEmail("");
+    } catch (err) {
+      console.error(err);
+      alert("Error adding partner");
+    }
+  };
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col">
       <Topbar title="All Partners" />
-      <main className="flex-1 overflow-y-auto p-6">
-        <Card>
-          <Table columns={columns} data={partners} />
-        </Card>
-      </main>
+
+      <div className="p-6">
+
+        {/* 🔥 BUTTON FIXED */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-violet-600 text-white px-4 py-2 rounded"
+          >
+            Add Partner
+          </button>
+        </div>
+
+        {/* 🔥 FORM */}
+        {showForm && (
+          <div className="bg-white p-4 mb-4 rounded border w-[300px]">
+            <input
+              type="text"
+              placeholder="Name"
+              className="border p-2 w-full mb-2"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+
+            <input
+              type="email"
+              placeholder="Email"
+              className="border p-2 w-full mb-2"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <button
+              onClick={addPartner}
+              className="bg-green-600 text-white px-4 py-2 rounded w-full"
+            >
+              Save
+            </button>
+          </div>
+        )}
+
+        {/* LIST */}
+        {partners.map((p) => (
+          <div key={p._id} className="bg-white p-4 mb-2 rounded border">
+            <p className="font-medium">{p.name}</p>
+            <p className="text-sm text-gray-500">{p.email}</p>
+            <p className="text-xs text-violet-600">{p.tier}</p>
+          </div>
+        ))}
+
+      </div>
     </div>
   );
 }

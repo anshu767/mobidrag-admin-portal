@@ -1,31 +1,14 @@
-/**
- * Partner Model
- * Stores partner information
- * Fields: name, email, status, joinedDate
- */
+// server/models/Partner.js
+import mongoose from "mongoose";
 
-import mongoose from 'mongoose';
-
-const partnerSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-    },
-    status: {
-      type: String,
-      enum: ['active', 'inactive', 'suspended'],
-      default: 'active',
-    },
+const partnerSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  tier: {
+    type: String,
+    enum: ["silver", "gold", "platinum"],
+    default: "silver",
   },
-  { timestamps: true }
-);
+});
 
-export default mongoose.model('Partner', partnerSchema);
+export default mongoose.model("Partner", partnerSchema);

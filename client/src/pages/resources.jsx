@@ -1,135 +1,85 @@
-import { useState } from "react";
-import { FileText, FileSpreadsheet, FileVideo, FileArchive } from "lucide-react";
-import Toggle from "../components/Toggle";
-
-const initialResources = [
-  {
-    id: 1,
-    name: "MobiDrag Sales Deck 2025",
-    type: "PPTX",
-    size: "2.4 MB",
-    uploaded: "May 1",
-    category: "Sales decks",
-    color: "bg-rose-100 text-rose-500",
-    icon: FileText,
-    visible: true,
-  },
-  {
-    id: 2,
-    name: "Partner One-Pager",
-    type: "PDF",
-    size: "890 KB",
-    uploaded: "May 1",
-    category: "PDFs",
-    color: "bg-rose-100 text-rose-500",
-    icon: FileText,
-    visible: true,
-  },
-  {
-    id: 3,
-    name: "Demo Walkthrough Video",
-    type: "MP4",
-    size: "45 MB",
-    uploaded: "May 3",
-    category: "Videos",
-    color: "bg-blue-100 text-blue-500",
-    icon: FileVideo,
-    visible: true,
-  },
-  {
-    id: 4,
-    name: "ROI Calculator Template",
-    type: "XLSX",
-    size: "120 KB",
-    uploaded: "May 10",
-    category: "Templates",
-    color: "bg-emerald-100 text-emerald-500",
-    icon: FileSpreadsheet,
-    visible: true,
-  },
-  {
-    id: 5,
-    name: "Objection Handling Guide",
-    type: "PDF",
-    size: "340 KB",
-    uploaded: "May 15",
-    category: "PDFs",
-    color: "bg-rose-100 text-rose-500",
-    icon: FileText,
-    visible: true,
-  },
-  {
-    id: 6,
-    name: "MobiDrag Brand Assets",
-    type: "ZIP",
-    size: "8.1 MB",
-    uploaded: "Apr 28",
-    category: "Templates",
-    color: "bg-gray-100 text-gray-500",
-    icon: FileArchive,
-    visible: false,
-  },
-];
+import { useEffect, useState } from "react";
+import axios from "axios";
+import Topbar from "../layouts/Topbar";
 
 export default function Resources() {
-  const [resources, setResources] = useState(initialResources);
+  const [resources, setResources] = useState([]);
 
-  const toggleVisibility = (id) =>
-    setResources((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, visible: !r.visible } : r))
-    );
+  // 🔥 fallback data (kabhi blank nahi)
+  const defaultData = [
+    { _id: 1, title: "Sales Deck", type: "PPT" },
+    { _id: 2, title: "Demo Video", type: "Video" },
+    { _id: 3, title: "ROI Template", type: "Excel" },
+  ];
 
-  const visibleCount = resources.filter((r) => r.visible).length;
+  // ✅ FETCH
+  const fetchResources = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/admin/resources");
+      setResources(res.data.data || []);
+    } catch (err) {
+      console.log("API failed → fallback");
+      setResources(defaultData);
+    }
+  };
+
+  useEffect(() => {
+    fetchResources();
+  }, []);
+
+  // ✅ ADD RESOURCE (NO ALERT)
+  const addResource = async () => {
+    try {
+      await axios.post("http://localhost:5000/api/admin/resources", {
+        title: "New Resource",
+        type: "PDF",
+      });
+
+      fetchResources();
+    } catch (err) {
+      console.log("Backend not ready → local add");
+
+      // 🔥 UI me direct add
+      setResources((prev) => [
+        ...prev,
+        {
+          _id: Date.now(),
+          title: "New Resource",
+          type: "PDF",
+        },
+      ]);
+    }
+  };
 
   return (
-    <div className="px-8 py-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Resources</h1>
-        <button className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700">
-          Add partner
-        </button>
-      </div>
+    <div className="flex-1 flex flex-col">
+      <Topbar title="Resources" />
 
-      {/* Sub header */}
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {visibleCount} files visible to all active partners
-        </p>
-        <button className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700">
-          Upload resource
-        </button>
-      </div>
+      <div className="p-6">
 
-      {/* List */}
-      <div className="divide-y divide-gray-100 rounded-xl border border-gray-100">
-        {resources.map((file) => {
-          const Icon = file.icon;
-          return (
-            <div
-              key={file.id}
-              className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50"
-            >
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${file.color}`}>
-                <Icon size={18} />
-              </div>
+        {/* BUTTON */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={addResource}
+            className="bg-violet-600 text-white px-4 py-2 rounded hover:bg-violet-700"
+          >
+            Upload Resource
+          </button>
+        </div>
 
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                <p className="text-xs text-gray-500">
-                  {file.type} · {file.size} · Uploaded {file.uploaded}
-                </p>
-              </div>
+        {/* EMPTY STATE */}
+        {resources.length === 0 && (
+          <p className="text-gray-500">No resources found</p>
+        )}
 
-              <span className="w-28 text-sm text-gray-500">{file.category}</span>
+        {/* LIST */}
+        {resources.map((r) => (
+          <div key={r._id} className="bg-white p-4 mb-2 rounded border">
+            <p className="font-medium">{r.title}</p>
+            <p className="text-sm text-gray-500">{r.type}</p>
+          </div>
+        ))}
 
-              <Toggle
-                checked={file.visible}
-                onChange={() => toggleVisibility(file.id)}
-              />
-            </div>
-          );
-        })}
       </div>
     </div>
   );

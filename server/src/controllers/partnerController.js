@@ -1,120 +1,106 @@
-/**
- * Partners Controller
- * Manage partner information, tier, and status
- */
+import Partner from "../models/Partner.js";
+import Deal from "../models/Deal.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
 
-import User from '../models/User.js';
-
-/**
- * GET /api/admin/partners
- * Fetch all partners (excluding admins)
- */
-export const getPartners = async (req, res) => {
+// CREATE partner
+export const createPartner = async (req, res) => {
   try {
-    const { status, page = 1, limit = 10, search } = req.query;
+    const { name, email, tier } = req.body;
 
-    // Build filter - only partners
-    const filter = { role: 'partner' };
-
-    if (status) filter.status = status;
-
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    const skip = (page - 1) * limit;
-
-    const partners = await User.find(filter)
-      .select('-password')
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
-
-    const total = await User.countDocuments(filter);
-
-    res.status(200).json({
-      success: true,
-      data: partners,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit),
-      },
+    const partner = await Partner.create({
+      name,
+      email,
+      tier: tier || "gold",
     });
-  } catch (error) {
+
+    // 🔥 IMPORTANT: same structure jo getPartners me hai
+    const enriched = {
+      ...partner.toObject(),
+      dealsCount: 0,
+      revenue: 0,
+    };
+
+    res.status(201).json({
+      success: true,
+      data: enriched,
+      message: "Partner created successfully",
+    });
+
+  } catch (err) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: err.message,
     });
   }
 };
+// GET all partners
+export const getPartners = asyncHandler(async (req, res) => {
+  const partners = await Partner.find().sort({ createdAt: -1 });
 
-/**
- * PATCH /api/admin/partners/:id
- * Update partner tier and/or status
- * Body: { tier: 'silver'|'gold'|'platinum', status: 'active'|'suspended' }
- */
-export const updatePartner = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { tier, status } = req.body;
+  const enriched = await Promise.all(
+    partners.map(async (p) => {
+      const deals = await Deal.find({ partnerId: p._id });
 
-    // Validate tier
-    if (tier && !['silver', 'gold', 'platinum'].includes(tier)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid tier. Must be silver, gold, or platinum',
-      });
-    }
+      const revenue = deals
+        .filter((d) => d.stage === "won")
+        .reduce((sum, d) => sum + d.amount, 0);
 
-    // Validate status
-    if (status && !['active', 'suspended'].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status. Must be active or suspended',
-      });
-    }
+      return {
+        ...p.toObject(),
+        dealsCount: deals.length,
+        revenue,
+      };
+    })
+  );
 
-    // Build update object
-    const updateData = {};
-    if (tier) updateData.tier = tier;
-    if (status) updateData.status = status;
+  res.status(200).json({ success: true, data: enriched });
+});
 
-    const partner = await User.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-password');
+// GET single partner
+export const getPartner = asyncHandler(async (req, res) => {
+  const partner = await Partner.findById(req.params.id);
 
-    if (!partner) {
-      return res.status(404).json({
-        success: false,
-        message: 'Partner not found',
-      });
-    }
-
-    if (partner.role !== 'partner') {
-      return res.status(400).json({
-        success: false,
-        message: 'User is not a partner',
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Partner updated successfully',
-      data: partner,
-    });
-  } catch (error) {
-    res.status(500).json({
+  if (!partner) {
+    return res.status(404).json({
       success: false,
-      message: error.message,
+      message: "Partner not found",
     });
   }
-};
 
-export default { getPartners, updatePartner };
+  res.status(200).json({ success: true, data: partner });
+});
+
+// UPDATE partner
+export const updatePartner = asyncHandler(async (req, res) => {
+  const partner = await Partner.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true, runValidators: true }
+  );
+
+  if (!partner) {
+    return res.status(404).json({
+      success: false,
+      message: "Partner not found",
+    });
+  }
+
+  res.status(200).json({ success: true, data: partner });
+});
+
+// DELETE partner
+export const deletePartner = asyncHandler(async (req, res) => {
+  const partner = await Partner.findByIdAndDelete(req.params.id);
+
+  if (!partner) {
+    return res.status(404).json({
+      success: false,
+      message: "Partner not found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Partner deleted",
+  });
+});

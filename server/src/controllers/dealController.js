@@ -1,148 +1,105 @@
-/**
- * Deals Controller
- * IMPORTANT LOGIC:
- * - When stage = "won" → auto create commission (only once)
- * - When stage = "lost" → store loss reason
- */
+import Deal from "../models/Deal.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import Commission from "../models/Commission.js";
 
-import Deal from '../models/Deal.js';
-import Commission from '../models/Commission.js';
-
-/**
- * GET /api/admin/deals
- */
-export const getDeals = async (req, res) => {
+// POST
+export const createDeal = async (req, res) => {
   try {
-    const { stage, page = 1, limit = 10, sort = '-createdAt' } = req.query;
-
-    const filter = {};
-    if (stage) filter.stage = stage;
-
-    const skip = (page - 1) * limit;
-
-    const deals = await Deal.find(filter)
-      .populate('partnerId', 'name email tier')
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort(sort);
-
-    const total = await Deal.countDocuments(filter);
-
-    res.status(200).json({
-      success: true,
-      data: deals,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit),
-      },
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    const deal = await Deal.create(req.body);
+    res.json({ success: true, data: deal });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
+// GET all
+export const getDeals = asyncHandler(async (req, res) => {
+  const deals = await Deal.find().populate("partnerId", "name company").sort({ createdAt: -1 });
+  res.status(200).json({ success: true, data: deals });
+});
 
-/**
- * PATCH /api/admin/deals/:id/stage
- */
-export const updateDealStage = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { stage, lossReason } = req.body;
+// GET one
+export const getDeal = asyncHandler(async (req, res) => {
+  const deal = await Deal.findById(req.params.id).populate("partnerId", "name company");
+  if (!deal) {
+    return res.status(404).json({ success: false, message: "Deal not found" });
+  }
+  res.status(200).json({ success: true, data: deal });
+});
 
-    // ✅ Validate stage
-    const validStages = ['contacted', 'demo', 'negotiating', 'won', 'lost'];
-    if (!validStages.includes(stage)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid stage. Must be one of: ${validStages.join(', ')}`,
-      });
-    }
+// PATCH
+export const updateDealStage = asyncHandler(async (req, res) => {
+  const { stage, lossReason } = req.body;
 
-    // ✅ Validate loss reason
-    if (stage === 'lost' && !lossReason) {
-      return res.status(400).json({
-        success: false,
-        message: 'lossReason is required when marking deal as lost',
-      });
-    }
+  const deal = await Deal.findById(req.params.id);
 
-    // ✅ Get deal
-    const deal = await Deal.findById(id).populate('partnerId', 'name email');
-
-    if (!deal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Deal not found',
-      });
-    }
-
-    // ✅ Update deal
-    const updateData = { stage };
-
-    if (stage === 'lost') {
-      updateData.lossReason = lossReason;
-    }
-
-    const updatedDeal = await Deal.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('partnerId', 'name email tier');
-
-    // 🔥 IMPORTANT: handle commission only once
-    if (stage === 'won') {
-
-      const existing = await Commission.findOne({ dealId: id });
-
-      // 👉 create only if not exists
-      if (!existing) {
-        const commissionAmount = deal.amount * 0.1;
-
-        const commission = await Commission.create({
-          dealId: id,
-          partnerId: deal.partnerId._id,
-          amount: commissionAmount,
-          status: 'pending',
-        });
-
-        return res.status(200).json({
-          success: true,
-          message: 'Deal marked as won & commission created',
-          data: {
-            deal: updatedDeal,
-            commission,
-          },
-        });
-      }
-
-      // 👉 already exists
-      return res.status(200).json({
-        success: true,
-        message: 'Deal already marked as won (commission exists)',
-        data: updatedDeal,
-      });
-    }
-
-    // ✅ Normal response
-    res.status(200).json({
-      success: true,
-      message: 'Deal stage updated successfully',
-      data: updatedDeal,
-    });
-
-  } catch (error) {
-    res.status(500).json({
+  if (!deal) {
+    return res.status(404).json({
       success: false,
-      message: error.message,
+      message: "Deal not found",
     });
   }
-};
 
-export default { getDeals, updateDealStage };
+  // update stage
+  deal.stage = stage;
+  deal.lastActivityAt = Date.now();
+
+  // अगर LOST
+  if (stage === "lost") {
+    deal.lossReason = lossReason || "";
+  }
+
+  // अगर WON → commission create
+  if (stage === "won") {
+    // check already created or not
+    const existing = await Commission.findOne({ dealId: deal._id });
+
+    if (!existing) {
+      const rate = 0.1; // 10% (later dynamic kar sakte ho)
+
+      const amount = (deal.amount || 0) * rate;
+
+      await Commission.create({
+        partnerId: deal.partnerId,
+        dealId: deal._id,
+        amount,
+        rate,
+        status: "pending",
+      });
+    }
+  }
+
+  await deal.save();
+
+  res.status(200).json({
+    success: true,
+    data: deal,
+  });
+});
+
+// PUT
+export const updateDeal = asyncHandler(async (req, res) => {
+  req.body.lastActivityAt = Date.now();
+
+  const deal = await Deal.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!deal) {
+    return res.status(404).json({ success: false, message: "Deal not found" });
+  }
+
+  res.status(200).json({ success: true, data: deal });
+});
+
+// DELETE
+export const deleteDeal = asyncHandler(async (req, res) => {
+  const deal = await Deal.findByIdAndDelete(req.params.id);
+
+  if (!deal) {
+    return res.status(404).json({ success: false, message: "Deal not found" });
+  }
+
+  res.status(200).json({ success: true, message: "Deal deleted" });
+});
