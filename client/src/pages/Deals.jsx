@@ -30,6 +30,16 @@ export default function Deals() {
     }
   };
 
+  const fetchDeals = async () => {
+  try {
+    const res = await api.get("/admin/deals");
+    console.log("DATA:", res.data); // 👈 ADD THIS
+    setDeals(res.data.data || []);
+  } catch (err) {
+    console.error("Fetch error:", err.response || err);
+  }
+};
+
   return (
     <div className="flex-1 flex flex-col">
       <Topbar title="All Deals" />
