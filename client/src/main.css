@@ -18,16 +18,65 @@
   --color-info: #3b82f6;
 }
 
+/* RESET */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* 🔥 GLOBAL FONT CONTROL */
+html {
+  font-size: 14px;   /* 👈 IMPORTANT (UI chhota + clean) */
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--color-body-bg);
   color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+/* 🔥 HEADINGS SIZE CONTROL */
+h1 { font-size: 18px; font-weight: 600; }
+h2 { font-size: 16px; font-weight: 600; }
+h3 { font-size: 15px; font-weight: 500; }
+
+/* 🔥 TEXT */
+p, span, td, th {
+  font-size: 13px;
+}
+
+/* 🔥 BUTTON */
+button {
+  font-size: 13px;
+}
+
+/* 🔥 INPUT */
+input, select {
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
+/* 🔥 CARD (compact) */
+.card {
+  padding: 12px;
+  border-radius: 10px;
+}
+
+/* 🔥 TABLE */
+table th {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+table td {
+  font-size: 13px;
+}
+
+/* 🔥 SIDEBAR TEXT */
+.sidebar-text {
+  font-size: 13px;
 }
 
 /* Scrollbar */
