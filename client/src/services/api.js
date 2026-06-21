@@ -1,10 +1,10 @@
 import axios from "axios";
 
-const API = axios.create({
+const api = axios.create({
   baseURL: "https://mobidrag-admin-portal.onrender.com/api"
 });
 
-// Attach the stored token to every outgoing request
+// Attach token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -13,7 +13,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// If the token is invalid/expired, bounce back to login
+// Handle auth error
 api.interceptors.response.use(
   (response) => response,
   (error) => {
