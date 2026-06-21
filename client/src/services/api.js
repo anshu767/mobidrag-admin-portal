@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: "https://mobidrag-admin-portal.onrender.com/api",
+const API = axios.create({
+  baseURL: "https://mobidrag-admin-portal.onrender.com/api"
 });
 
 // Attach the stored token to every outgoing request
