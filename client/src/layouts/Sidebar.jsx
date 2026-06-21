@@ -27,25 +27,25 @@ const navItems = [
 
 export default function Sidebar() {
   return (
-    <aside className="w-[220px] bg-[#151320] text-white min-h-screen flex flex-col">
+    <aside className="w-[250px] bg-[#151320] text-white min-h-screen flex flex-col">
       
-      {/* 🔥 Logo (smaller) */}
-      <div className="flex items-center gap-2 px-4 py-4 border-b border-white/10">
-        <div className="w-8 h-8 rounded-md bg-violet-600 flex items-center justify-center text-white text-sm font-bold">
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+        <div className="w-9 h-9 rounded-lg bg-violet-600 flex items-center justify-center text-white font-bold">
           M
         </div>
         <div>
-          <div className="font-medium text-white text-xs">MobiDrag</div>
-          <div className="text-[10px] text-[#a8a2bb]">Admin Panel</div>
+          <div className="font-semibold text-white text-sm">MobiDrag</div>
+          <div className="text-xs text-[#a8a2bb]">Admin Panel</div>
         </div>
       </div>
 
-      {/* 🔥 Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto py-5 px-3">
         {navItems.map((section) => (
-          <div key={section.section} className="mb-5">
+          <div key={section.section} className="mb-6">
             
-            <p className="text-[10px] font-semibold text-[#7f7a96] uppercase tracking-wider px-2 mb-2">
+            <p className="text-xs font-semibold text-[#7f7a96] uppercase tracking-wider px-3 mb-2">
               {section.section}
             </p>
 
@@ -54,20 +54,20 @@ export default function Sidebar() {
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-2 py-2 rounded-md text-xs mb-1 ${
+                  `flex items-center justify-between px-3 py-2.5 rounded-xl text-sm mb-1 transition ${
                     isActive
                       ? 'bg-[#3a225e] text-white'
                       : 'text-[#d6d2e6] hover:bg-white/5'
                   }`
                 }
               >
-                <span className="flex items-center gap-2">
-                  <Icon size={15} />
+                <span className="flex items-center gap-3">
+                  <Icon size={18} />
                   {label}
                 </span>
 
                 {badge && (
-                  <span className="text-[10px] bg-violet-600 text-white px-1.5 py-0.5 rounded-full">
+                  <span className="text-xs bg-violet-600 text-white px-2 py-0.5 rounded-full">
                     {badge}
                   </span>
                 )}

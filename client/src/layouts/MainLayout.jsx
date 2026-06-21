@@ -4,24 +4,10 @@ import Topbar from './Topbar';
 
 export default function MainLayout() {
   return (
-    <div className="flex h-screen bg-slate-50">
-
-      {/* 🔥 Sidebar (fixed) */}
+    <div className="flex h-screen overflow-hidden bg-slate-50">
       <Sidebar />
-
-      {/* 🔥 Main Content */}
-      <div className="flex-1 flex flex-col ml-[220px]">
-
-        {/* 🔥 Topbar fixed */}
-        <div className="sticky top-0 z-10 bg-white border-b">
-          <Topbar />
-        </div>
-
-        {/* 🔥 Page Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <Outlet />
-        </div>
-
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Outlet />
       </div>
     </div>
   );
