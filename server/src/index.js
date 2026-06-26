@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import connectDB from "./config/database.js";
 
+import connectDB from "./config/database.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
-// ROUTES
+// Routes
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import partnerRoutes from "./routes/partnerRoutes.js";
@@ -15,88 +15,82 @@ dotenv.config();
 
 const app = express();
 
-// ✅ DB
+// =========================
+// Database
+// =========================
 connectDB();
 
-// ✅ CORS (FINAL FIX)
+// =========================
+// Middleware
+// =========================
+
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://mobidrag-admin-portal-kr73.vercel.app"
+  "https://mobidrag-admin-portal-kr73.vercel.app",
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // postman / mobile
+    origin: (origin, callback) => {
+      // Allow Postman, mobile apps, server-to-server requests
+      if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+        return callback(null, true);
       }
+
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
 );
 
-// ✅ BODY
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ LOG
+// Request Logger
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
+  console.log(`${req.method} ${req.originalUrl}`);
   next();
 });
 
-app.use(
-  cors({
-    origin: "*",
-    credentials: true,
-  })
-);
+// =========================
+// Routes
+// =========================
 
-app.use((req, res, next) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://mobidrag-admin-portal-kr73.vercel.app"
-  );
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,DELETE,PATCH"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-  next();
-});
-
-// ✅ ROOT
+// Root
 app.get("/", (req, res) => {
-  res.send("MobiDrag Backend Running 🚀");
+  res.send("🚀 MobiDrag Backend Running Successfully");
 });
 
-// ✅ HEALTH
+// Health Check
 app.get("/api/health", (req, res) => {
-  res.json({ success: true });
+  res.status(200).json({
+    success: true,
+    message: "Server is running",
+  });
 });
 
-// ✅ ROUTES
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/partners", partnerRoutes);
 app.use("/api/deals", dealRoutes);
 
-// ❌ HANDLERS
+// =========================
+// Error Handling
+// =========================
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// ✅ START
+// =========================
+// Server
+// =========================
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
 export default app;
